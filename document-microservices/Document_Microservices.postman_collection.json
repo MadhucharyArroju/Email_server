@@ -1,0 +1,110 @@
+{
+  "info": {
+    "name": "Document Microservices API",
+    "description": "Complete API collection for Document Management Microservices",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Eureka Server",
+      "item": [
+        {
+          "name": "Eureka Dashboard",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8761"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Document Service",
+      "item": [
+        {
+          "name": "Get All Documents",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "http://localhost:8001/api/documents"
+          }
+        },
+        {
+          "name": "Get Document by ID",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "http://localhost:8001/api/documents/1"
+          }
+        },
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentName\": \"MyDocument.pdf\",\n  \"documentType\": \"PDF\",\n  \"filePath\": \"/documents/myfile.pdf\",\n  \"uploadedBy\": \"john@example.com\",\n  \"status\": \"UPLOADED\",\n  \"description\": \"Sample document\"\n}"
+            },
+            "url": "http://localhost:8001/api/documents"
+          }
+        },
+        {
+          "name": "Update Document",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentName\": \"UpdatedDocument.pdf\",\n  \"documentType\": \"PDF\",\n  \"filePath\": \"/documents/updated.pdf\",\n  \"uploadedBy\": \"john@example.com\",\n  \"status\": \"UPLOADED\",\n  \"description\": \"Updated document\"\n}"
+            },
+            "url": "http://localhost:8001/api/documents/1"
+          }
+        },
+        {
+          "name": "Update Document Status",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"PROCESSING\"}"
+            },
+            "url": "http://localhost:8001/api/documents/1/status"
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "url": "http://localhost:8001/api/documents/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Email Service",
+      "item": [
+        {
+          "name": "Email Service Health",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "http://localhost:8002/api/emails/health"
+          }
+        },
+        {
+          "name": "Send Email",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"recipient@example.com\",\n  \"subject\": \"Test Email\",\n  \"body\": \"This is a test email from microservices\",\n  \"from\": \"your-email@gmail.com\"\n}"
+            },
+            "url": "http://localhost:8002/api/emails/send"
+          }
+        }
+      ]
+    }
+  ]
+}
