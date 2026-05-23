@@ -14,6 +14,20 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  servlet:
+    multipart:
+      enabled: true
+      # Hard limit enforced by Spring before the request reaches the controller.
+      max-file-size: 100KB
+      max-request-size: 100KB
+
+# Directory on disk where uploaded customer files are stored.
+file:
+  upload-dir: ./uploads/customer-files
+
+# Base URL of the external insurance-claims-system application used by the Feign client.
+insurance-claims-system:
+  url: http://localhost:8080
 
 eureka:
   client:
