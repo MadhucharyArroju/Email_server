@@ -1,0 +1,210 @@
+{
+  "info": {
+    "name": "File Controller API - Document Service",
+    "description": "Postman collection for the File Controller (CustomerFile CRUD with multipart upload) and the Employee API (Feign client to the external insurance-claims-system). All requests target the document-service running on port 8001.\n\nAccepted upload types: JPEG, images (PNG/GIF/BMP/WEBP), MS Word (.doc/.docx), PDF, Excel (.xls/.xlsx).\nMaximum file size: 100 KB.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8001",
+      "type": "string"
+    },
+    {
+      "key": "fileId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "employeeId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "File Controller (CustomerFile CRUD)",
+      "description": "RESTful CRUD endpoints for uploading and managing customer files. Base path: /api/files",
+      "item": [
+        {
+          "name": "1. Upload File (CREATE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select a file <= 100 KB. Allowed: JPEG, PNG, GIF, BMP, WEBP, PDF, DOC, DOCX, XLS, XLSX."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"]
+            },
+            "description": "Uploads a file via multipart/form-data. The file is validated for type and size (max 100 KB), written to disk, and its metadata (fileName, fileSize, filePath) is persisted to the CustomerFile table. Returns 201 Created with the saved CustomerFile record.\n\nNote: in Postman, choose the 'file' form field and click 'Select Files' to attach a file. Do NOT set Content-Type manually - Postman adds the multipart boundary automatically."
+          },
+          "response": [
+            {
+              "name": "201 Created - sample",
+              "originalRequest": {
+                "method": "POST",
+                "url": {"raw": "{{baseUrl}}/api/files", "host": ["{{baseUrl}}"], "path": ["api", "files"]}
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"success\": true,\n  \"message\": \"File uploaded successfully\",\n  \"data\": {\n    \"fileId\": 1,\n    \"fileName\": \"invoice.pdf\",\n    \"fileSize\": 81234,\n    \"filePath\": \"/app/uploads/customer-files/2f1c..._invoice.pdf\",\n    \"uploadedAt\": \"2026-05-23T10:15:30\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "2. Get All Files (READ)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"]
+            },
+            "description": "Retrieves metadata for every stored customer file."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Get File by ID (READ)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}"]
+            },
+            "description": "Retrieves metadata for a single customer file by its fileId. Returns 404 if not found."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Download File (READ - binary)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}", "download"]
+            },
+            "description": "Downloads the actual file content from disk as an attachment. Use 'Send and Download' in Postman to save the response."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Update File (UPDATE)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "New file to replace the existing content (<= 100 KB, allowed types only)."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}"]
+            },
+            "description": "Replaces the content of an existing customer file. The previous file is deleted from disk and the CustomerFile row is updated with the new fileName, fileSize, and filePath."
+          },
+          "response": []
+        },
+        {
+          "name": "6. Delete File (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}"]
+            },
+            "description": "Deletes a customer file from disk and removes its metadata row from the CustomerFile table."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Employee API (Feign -> insurance-claims-system)",
+      "description": "Endpoints that use a Feign client to fetch employee details from the external insurance-claims-system application (http://localhost:8080). Base path: /api/employees",
+      "item": [
+        {
+          "name": "Get All Employees (Feign)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/employees",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees"]
+            },
+            "description": "Calls the document-service, which in turn uses a Feign client to call GET http://localhost:8080/api/employees on the insurance-claims-system and returns the list of employees."
+          },
+          "response": [
+            {
+              "name": "200 OK - sample",
+              "originalRequest": {
+                "method": "GET",
+                "url": {"raw": "{{baseUrl}}/api/employees", "host": ["{{baseUrl}}"], "path": ["api", "employees"]}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Employees retrieved from insurance-claims-system\",\n  \"data\": [\n    {\n      \"employeeId\": 1,\n      \"name\": \"Asha Rao\",\n      \"email\": \"asha.rao@insurance.com\",\n      \"department\": \"Claims\",\n      \"branch\": \"Hyderabad\",\n      \"role\": \"Claims Officer\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Employee by ID (Feign)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeId}}"]
+            },
+            "description": "Calls the document-service, which uses the Feign client to call GET http://localhost:8080/api/employees/{id} on the insurance-claims-system and returns a single employee."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

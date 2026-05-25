@@ -39,6 +39,15 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+
+        <!-- OpenPDF (LibrePDF) - open-source PDF generation library used by
+             CignaPdfService to build the Dental Benefit Summary PDF.
+             LGPL/MPL licensed and compatible with Java 8 / Spring Boot 2.7. -->
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>1.3.30</version>
+        </dependency>
     </dependencies>
 
     <build>

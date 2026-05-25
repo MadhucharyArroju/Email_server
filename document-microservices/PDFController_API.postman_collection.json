@@ -1,0 +1,137 @@
+{
+  "info": {
+    "name": "PDF Controller API - Document Service",
+    "description": "Postman collection for the PDFController in the document-service.\n\nThe PDFController generates a styled, Cigna-style 'Dental Benefit Summary' PDF for an employee. On input of an employee id it retrieves the Employee, Address and Department data by REUSING the existing EmployeeController (GET /api/employees -> getAllEmployees), which fetches the data from the insurance-claims-system database via a Feign client.\n\nThe generated PDF carries the 'cigna' logo on the top-right and the 'cigna2' logo on the top-left, with green section banners and cascading benefit-class tables.\n\nPrerequisites:\n  1. eureka-server running (port 8761) - optional but recommended.\n  2. insurance-claims-system running on http://localhost:8080 with employee data in its database.\n  3. document-service running on http://localhost:8001.\n\nBase path: /api/pdf",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8001",
+      "type": "string"
+    },
+    {
+      "key": "employeeId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "PDF Controller (Dental Benefit Summary)",
+      "description": "Endpoints that generate the Cigna-style Dental Benefit Summary PDF. Base path: /api/pdf",
+      "item": [
+        {
+          "name": "1. Generate Employee PDF - View Inline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/pdf"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pdf/employee/{{employeeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pdf", "employee", "{{employeeId}}"]
+            },
+            "description": "Generates the Dental Benefit Summary PDF for the employee whose id equals {{employeeId}} (e.g. id=1).\n\nFlow:\n  - PDFController reuses EmployeeController.getAllEmployees() (GET /api/employees) to fetch every employee from the insurance-claims-system database via the Feign client.\n  - It filters that list for the requested id.\n  - CignaPdfService renders a branded PDF (cigna2 logo top-left, cigna logo top-right, green section banners, cascading benefit tables) containing the Employee, Department and Address details.\n\nResponse: 200 OK, Content-Type: application/pdf, Content-Disposition: inline.\nIn Postman the PDF preview appears in the response body. Use 'Send and Download' to save it.\n\nErrors:\n  - 404 Not Found if no employee has the given id (or the insurance-claims-system is unreachable).\n  - 500 Internal Server Error if PDF rendering fails."
+          },
+          "response": [
+            {
+              "name": "200 OK - PDF returned inline",
+              "originalRequest": {
+                "method": "GET",
+                "url": {"raw": "{{baseUrl}}/api/pdf/employee/1", "host": ["{{baseUrl}}"], "path": ["api", "pdf", "employee", "1"]}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {"key": "Content-Type", "value": "application/pdf"},
+                {"key": "Content-Disposition", "value": "inline; filename=\"Cigna-Dental-Benefit-Summary-Employee-1.pdf\""}
+              ],
+              "body": "<binary PDF content>"
+            }
+          ]
+        },
+        {
+          "name": "2. Generate Employee PDF - Force Download",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/pdf"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pdf/employee/{{employeeId}}?download=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pdf", "employee", "{{employeeId}}"],
+              "query": [
+                {
+                  "key": "download",
+                  "value": "true",
+                  "description": "When true the response is sent with Content-Disposition: attachment so the browser downloads the file instead of displaying it inline."
+                }
+              ]
+            },
+            "description": "Same as request 1 but sets the optional 'download=true' query parameter. The PDF is returned with Content-Disposition: attachment, prompting the browser to download 'Cigna-Dental-Benefit-Summary-Employee-{id}.pdf'. In Postman use 'Send and Download'."
+          },
+          "response": []
+        },
+        {
+          "name": "3. List Employees Eligible for a PDF",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pdf/employees",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pdf", "employees"]
+            },
+            "description": "Convenience endpoint that returns every employee for which a PDF can be generated (the same data the PDFController reads from EmployeeController.getAllEmployees()). Use it to discover valid employee ids before calling /api/pdf/employee/{id}."
+          },
+          "response": [
+            {
+              "name": "200 OK - sample",
+              "originalRequest": {
+                "method": "GET",
+                "url": {"raw": "{{baseUrl}}/api/pdf/employees", "host": ["{{baseUrl}}"], "path": ["api", "pdf", "employees"]}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Employees available for PDF generation\",\n  \"data\": [\n    {\n      \"empId\": 1,\n      \"empName\": \"Madhu Chary\",\n      \"salary\": 95000.00,\n      \"age\": 29,\n      \"addresses\": [\n        {\n          \"addressId\": 1,\n          \"state\": \"Telangana\",\n          \"city\": \"Hyderabad\",\n          \"pincode\": \"500081\",\n          \"street\": \"Gachibowli, Plot 12\"\n        }\n      ],\n      \"department\": [\n        {\n          \"departmentId\": 1,\n          \"departmentName\": \"Claims Processing\",\n          \"departmentCode\": 4101,\n          \"departmentDesc\": \"Handles insurance claim intake and adjudication\"\n        }\n      ]\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "4. Generate Employee PDF - Not Found (error)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/pdf"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pdf/employee/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pdf", "employee", "999999"]
+            },
+            "description": "Demonstrates the 404 error path. When no employee matches the supplied id, the GlobalExceptionHandler maps the ResourceNotFoundException to HTTP 404 with a JSON ApiResponse body."
+          },
+          "response": [
+            {
+              "name": "404 Not Found - sample",
+              "originalRequest": {
+                "method": "GET",
+                "url": {"raw": "{{baseUrl}}/api/pdf/employee/999999", "host": ["{{baseUrl}}"], "path": ["api", "pdf", "employee", "999999"]}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Employee not found with id: 999999. Ensure the insurance-claims-system is running on http://localhost:8080.\",\n  \"data\": null\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
