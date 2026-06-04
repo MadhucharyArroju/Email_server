@@ -1,10 +1,16 @@
 {
   "info": {
-    "name": "Document Microservices API",
-    "description": "Complete API collection for Document Management Microservices",
+    "name": "Document Microservices API — Insurance Claims & Policy Management",
+    "description": "Complete API collection for Document Management Microservices.\nEmail Service updated: multipart/form-data with attachment support, multiple recipients, Gmail + YopMail providers, Resilience4J circuit-breaker.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    { "key": "email_base",    "value": "http://localhost:8002" },
+    { "key": "document_base", "value": "http://localhost:8001" },
+    { "key": "eureka_base",   "value": "http://localhost:8761" }
+  ],
   "item": [
+
     {
       "name": "Eureka Server",
       "item": [
@@ -12,11 +18,12 @@
           "name": "Eureka Dashboard",
           "request": {
             "method": "GET",
-            "url": "http://localhost:8761"
+            "url": "{{eureka_base}}"
           }
         }
       ]
     },
+
     {
       "name": "Document Service",
       "item": [
@@ -24,87 +31,246 @@
           "name": "Get All Documents",
           "request": {
             "method": "GET",
-            "header": [{"key": "Accept", "value": "application/json"}],
-            "url": "http://localhost:8001/api/documents"
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{document_base}}/api/documents"
           }
         },
         {
           "name": "Get Document by ID",
           "request": {
             "method": "GET",
-            "header": [{"key": "Accept", "value": "application/json"}],
-            "url": "http://localhost:8001/api/documents/1"
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{document_base}}/api/documents/1"
           }
         },
         {
           "name": "Upload Document",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"documentName\": \"MyDocument.pdf\",\n  \"documentType\": \"PDF\",\n  \"filePath\": \"/documents/myfile.pdf\",\n  \"uploadedBy\": \"john@example.com\",\n  \"status\": \"UPLOADED\",\n  \"description\": \"Sample document\"\n}"
             },
-            "url": "http://localhost:8001/api/documents"
+            "url": "{{document_base}}/api/documents"
           }
         },
         {
           "name": "Update Document",
           "request": {
             "method": "PUT",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"documentName\": \"UpdatedDocument.pdf\",\n  \"documentType\": \"PDF\",\n  \"filePath\": \"/documents/updated.pdf\",\n  \"uploadedBy\": \"john@example.com\",\n  \"status\": \"UPLOADED\",\n  \"description\": \"Updated document\"\n}"
             },
-            "url": "http://localhost:8001/api/documents/1"
+            "url": "{{document_base}}/api/documents/1"
           }
         },
         {
           "name": "Update Document Status",
           "request": {
             "method": "PUT",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\"status\": \"PROCESSING\"}"
             },
-            "url": "http://localhost:8001/api/documents/1/status"
+            "url": "{{document_base}}/api/documents/1/status"
           }
         },
         {
           "name": "Delete Document",
           "request": {
             "method": "DELETE",
-            "url": "http://localhost:8001/api/documents/1"
+            "url": "{{document_base}}/api/documents/1"
           }
         }
       ]
     },
+
     {
       "name": "Email Service",
+      "description": "POST /api/emails/send accepts multipart/form-data.\nPart 'emailRequest' = JSON string.\nPart 'attachments'  = file(s) ≤ 100 KB each (optional).\n\nProvider routing:\n  fromEmail domain = gmail.com   → GmailEmailProvider\n  fromEmail domain = yopmail.com → YopMailEmailProvider\n  any other domain               → falls back to GmailEmailProvider",
       "item": [
+
         {
-          "name": "Email Service Health",
+          "name": "Health Check",
           "request": {
             "method": "GET",
-            "header": [{"key": "Accept", "value": "application/json"}],
-            "url": "http://localhost:8002/api/emails/health"
-          }
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{email_base}}/api/emails/health"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"UP\",\n  \"service\": \"EMAIL-SERVICE\",\n  \"timestamp\": \"2026-06-04T10:00:00\"\n}"
+            }
+          ]
         },
+
         {
-          "name": "Send Email",
+          "name": "Send Email — Multiple Recipients (Gmail sender, no attachment)",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"to\": \"recipient@example.com\",\n  \"subject\": \"Test Email\",\n  \"body\": \"This is a test email from microservices\",\n  \"from\": \"your-email@gmail.com\"\n}"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "emailRequest",
+                  "value": "{\n  \"recipients\": [\n    \"user1@gmail.com\",\n    \"user2@yahoo.com\",\n    \"user3@outlook.com\",\n    \"user4@company.com\"\n  ],\n  \"subject\": \"Test Email\",\n  \"body\": \"This is a test email from microservices\",\n  \"fromEmail\": \"madhuchary21@gmail.com\"\n}",
+                  "type": "text",
+                  "description": "JSON string — must be Content-Type text/plain in the part"
+                }
+              ]
             },
-            "url": "http://localhost:8002/api/emails/send"
+            "url": "{{email_base}}/api/emails/send",
+            "description": "Sends to 4 recipients via GmailEmailProvider (sender = gmail.com).\nNo file attachment — 'attachments' part omitted."
+          },
+          "response": [
+            {
+              "name": "200 All Sent",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"All 4 email(s) sent successfully\",\n  \"data\": {\n    \"totalRecipients\": 4,\n    \"successCount\": 4,\n    \"failCount\": 0,\n    \"timestamp\": \"2026-06-04T10:00:00\",\n    \"results\": [\n      { \"recipient\": \"user1@gmail.com\",    \"provider\": \"GMAIL\", \"status\": \"SUCCESS\", \"sentAt\": \"2026-06-04T10:00:01\" },\n      { \"recipient\": \"user2@yahoo.com\",    \"provider\": \"GMAIL\", \"status\": \"SUCCESS\", \"sentAt\": \"2026-06-04T10:00:02\" },\n      { \"recipient\": \"user3@outlook.com\",  \"provider\": \"GMAIL\", \"status\": \"SUCCESS\", \"sentAt\": \"2026-06-04T10:00:03\" },\n      { \"recipient\": \"user4@company.com\",  \"provider\": \"GMAIL\", \"status\": \"SUCCESS\", \"sentAt\": \"2026-06-04T10:00:04\" }\n    ]\n  }\n}"
+            },
+            {
+              "name": "207 Partial Success",
+              "status": "Multi-Status",
+              "code": 207,
+              "body": "{\n  \"success\": false,\n  \"message\": \"3 sent, 1 failed\",\n  \"data\": {\n    \"totalRecipients\": 4,\n    \"successCount\": 3,\n    \"failCount\": 1,\n    \"results\": [\n      { \"recipient\": \"user1@gmail.com\",   \"provider\": \"GMAIL\", \"status\": \"SUCCESS\" },\n      { \"recipient\": \"user2@yahoo.com\",   \"provider\": \"GMAIL\", \"status\": \"FAILED\",  \"errorMessage\": \"Connection refused\" },\n      { \"recipient\": \"user3@outlook.com\", \"provider\": \"GMAIL\", \"status\": \"SUCCESS\" },\n      { \"recipient\": \"user4@company.com\", \"provider\": \"GMAIL\", \"status\": \"SUCCESS\" }\n    ]\n  }\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Send Email — With Attachment (Gmail, ≤ 100 KB file)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "emailRequest",
+                  "value": "{\n  \"recipients\": [\n    \"user1@gmail.com\",\n    \"user2@yahoo.com\"\n  ],\n  \"subject\": \"Policy Renewal Notice — Attachment\",\n  \"body\": \"Please find your policy renewal document attached.\",\n  \"fromEmail\": \"madhuchary21@gmail.com\"\n}",
+                  "type": "text"
+                },
+                {
+                  "key": "attachments",
+                  "type": "file",
+                  "src": "/path/to/policy-renewal.pdf",
+                  "description": "PDF ≤ 100 KB. Change src to actual file path."
+                }
+              ]
+            },
+            "url": "{{email_base}}/api/emails/send",
+            "description": "Sends email with a file attachment via GmailEmailProvider.\nFile must be ≤ 100 KB (enforced server-side).\nMultiple files: add extra 'attachments' rows."
+          },
+          "response": [
+            {
+              "name": "200 OK with attachment",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"All 2 email(s) sent successfully\",\n  \"data\": {\n    \"totalRecipients\": 2,\n    \"successCount\": 2,\n    \"failCount\": 0,\n    \"results\": [\n      { \"recipient\": \"user1@gmail.com\", \"provider\": \"GMAIL\", \"status\": \"SUCCESS\" },\n      { \"recipient\": \"user2@yahoo.com\", \"provider\": \"GMAIL\", \"status\": \"SUCCESS\" }\n    ]\n  }\n}"
+            },
+            {
+              "name": "400 Attachment Too Large",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Validation error: Attachment 'large-file.pdf' exceeds the 100 KB limit (204800 bytes)\",\n  \"data\": null\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Send Email — YopMail Sender (QA/Test)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "emailRequest",
+                  "value": "{\n  \"recipients\": [\n    \"testuser1@yopmail.com\",\n    \"testuser2@yopmail.com\"\n  ],\n  \"subject\": \"Claims Acknowledgement — QA Test\",\n  \"body\": \"Your insurance claim #CLM-2026-001 has been received and is under review.\",\n  \"fromEmail\": \"qaagent@yopmail.com\"\n}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{email_base}}/api/emails/send",
+            "description": "Routes via YopMailEmailProvider (sender domain = yopmail.com).\nSubject is prefixed with '[TEST]' automatically.\nBody is wrapped in the QA HTML template."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"All 2 email(s) sent successfully\",\n  \"data\": {\n    \"totalRecipients\": 2,\n    \"successCount\": 2,\n    \"failCount\": 0,\n    \"results\": [\n      { \"recipient\": \"testuser1@yopmail.com\", \"provider\": \"YOPMAIL\", \"status\": \"SUCCESS\" },\n      { \"recipient\": \"testuser2@yopmail.com\", \"provider\": \"YOPMAIL\", \"status\": \"SUCCESS\" }\n    ]\n  }\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Send Email — YopMail with Attachment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "emailRequest",
+                  "value": "{\n  \"recipients\": [\n    \"testqa@yopmail.com\"\n  ],\n  \"subject\": \"Claim Document — QA Review\",\n  \"body\": \"Please review the attached claim document for QA sign-off.\",\n  \"fromEmail\": \"qaagent@yopmail.com\"\n}",
+                  "type": "text"
+                },
+                {
+                  "key": "attachments",
+                  "type": "file",
+                  "src": "/path/to/claim-document.pdf",
+                  "description": "File ≤ 100 KB"
+                }
+              ]
+            },
+            "url": "{{email_base}}/api/emails/send"
+          }
+        },
+
+        {
+          "name": "Send Email — Mixed Recipients (Gmail + YopMail + others)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "emailRequest",
+                  "value": "{\n  \"recipients\": [\n    \"adjuster@gmail.com\",\n    \"policyholder@yopmail.com\",\n    \"manager@insurancecorp.com\",\n    \"audit@company.com\"\n  ],\n  \"subject\": \"Claim #CLM-2026-099 — Decision Notification\",\n  \"body\": \"We are pleased to inform you that claim #CLM-2026-099 has been approved. Payout of $5,000 will be processed within 3 business days.\",\n  \"fromEmail\": \"madhuchary21@gmail.com\",\n  \"cc\": \"supervisor@insurancecorp.com\"\n}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{email_base}}/api/emails/send",
+            "description": "Real-world scenario: broadcast claim decision to all stakeholders.\nAll sent via GmailEmailProvider (fromEmail = gmail.com)."
+          }
+        },
+
+        {
+          "name": "Actuator — Circuit Breaker Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{email_base}}/actuator/health",
+            "description": "Shows emailService circuit-breaker state: CLOSED / OPEN / HALF_OPEN"
           }
         }
+
       ]
     }
+
   ]
 }

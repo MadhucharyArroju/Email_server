@@ -1,34 +1,92 @@
 spring:
   application:
     name: email-service
+
+  # ── Multipart upload limits (attachments ≤ 100 KB) ──────────────────
+  servlet:
+    multipart:
+      enabled:            true
+      max-file-size:      100KB
+      max-request-size:   500KB
+
+  # ── Default JavaMailSender bean (used as fallback) ───────────────────
   mail:
-    host: smtp.gmail.com
-    port: 587
+    host:     smtp.gmail.com
+    port:     587
     username: madhuchary21@gmail.com
-    password: Madhu@1245
+    password: ${GMAIL_APP_PASSWORD:nkfxwuxmbrvcgzgf}
     properties:
       mail:
         smtp:
-          auth: true
+          auth:              true
           starttls:
-            enable: true
-            required: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
+            enable:          true
+            required:        true
+          ssl:
+            trust:           smtp.gmail.com
 
+# ── Custom provider config (injected into EmailProviderConfig) ────────
+app:
+  mail:
+    gmail:
+      host:     smtp.gmail.com
+      port:     587
+      username: madhuchary21@gmail.com
+      password: ${GMAIL_APP_PASSWORD:nkfxwuxmbrvcgzgf}
+    yopmail:
+      host:     smtp.gmail.com       # YopMail has no outbound SMTP; relay via Gmail
+      port:     587
+      username: madhuchary21@gmail.com
+      password: ${GMAIL_APP_PASSWORD:nkfxwuxmbrvcgzgf}
+
+# ── Spring Cloud — Eureka ─────────────────────────────────────────────
 eureka:
   client:
     service-url:
-      default-zone: http://localhost:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/
   instance:
     prefer-ip-address: true
-    hostname: localhost
+    hostname:          localhost
 
+# ── Spring Cloud Circuit Breaker — Resilience4J ──────────────────────
+resilience4j:
+  circuitbreaker:
+    instances:
+      emailService:
+        registerHealthIndicator:         true
+        slidingWindowSize:               10
+        minimumNumberOfCalls:            5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState:         10s
+        failureRateThreshold:            50
+        eventConsumerBufferSize:         10
+  retry:
+    instances:
+      emailService:
+        maxAttempts:                     3
+        waitDuration:                    2s
+
+# ── Actuator endpoints ────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,circuitbreakers,retries,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+
+# ── Server ────────────────────────────────────────────────────────────
 server:
   port: 8002
 
+# ── Logging ───────────────────────────────────────────────────────────
 logging:
   level:
-    root: INFO
-    com.example.email: DEBUG
+    com.example.email:         DEBUG
+    org.springframework.mail:  DEBUG
+    io.github.resilience4j:    INFO
